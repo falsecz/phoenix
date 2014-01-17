@@ -44,7 +44,12 @@ import com.salesforce.phoenix.expression.function.FloorDecimalExpression;
 import com.salesforce.phoenix.expression.function.FloorFunction;
 import com.salesforce.phoenix.expression.function.IndexStateNameFunction;
 import com.salesforce.phoenix.expression.function.InvertFunction;
+import com.salesforce.phoenix.expression.function.FirstFunction;
+import com.salesforce.phoenix.expression.function.FirstLastBaseFunction;
+import com.salesforce.phoenix.expression.function.HexToBytesFunction;
+import com.salesforce.phoenix.expression.function.Jebka;
 import com.salesforce.phoenix.expression.function.LTrimFunction;
+import com.salesforce.phoenix.expression.function.LastFunction;
 import com.salesforce.phoenix.expression.function.LengthFunction;
 import com.salesforce.phoenix.expression.function.LowerFunction;
 import com.salesforce.phoenix.expression.function.MD5Function;
@@ -73,6 +78,11 @@ import com.salesforce.phoenix.expression.function.ToNumberFunction;
 import com.salesforce.phoenix.expression.function.TrimFunction;
 import com.salesforce.phoenix.expression.function.TruncFunction;
 import com.salesforce.phoenix.expression.function.UpperFunction;
+import com.salesforce.phoenix.expression.function.FirstFunction;
+import com.salesforce.phoenix.expression.function.FirstLastBaseFunction;
+import com.salesforce.phoenix.expression.function.HexToBytesFunction;
+import com.salesforce.phoenix.expression.function.Jebka;
+
 
 /**
  * 
@@ -158,8 +168,12 @@ public enum ExpressionType {
     TimestampAddExpression(TimestampAddExpression.class),
     TimestampSubtractExpression(TimestampSubtractExpression.class),
     ArrayIndexFunction(ArrayIndexFunction.class),
-    ArrayLengthFunction(ArrayLengthFunction.class);
-    
+    ArrayLengthFunction(ArrayLengthFunction.class),
+    HexToBytesFunction(HexToBytesFunction.class),
+    FirstFunction(FirstFunction.class),
+    LastFunction(LastFunction.class),
+    JebkaFunction(Jebka.class);
+
     ExpressionType(Class<? extends Expression> clazz) {
         this.clazz = clazz;
     }

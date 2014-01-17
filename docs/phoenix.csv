@@ -843,6 +843,17 @@ The returned value is of the same data type as the parameter.
 MIN(NAME)
 "
 
+"Functions (Aggregate)","FIRST","
+FIRST(term)
+","
+The first value.
+If no rows are selected, the result is NULL.
+Aggregates are only allowed in select statements.
+The returned value is of the same data type as the parameter.
+","
+FIRST(NAME)
+"
+
 "Functions (Aggregate)","SUM","
 SUM( { numericTerm } )
 ","
