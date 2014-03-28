@@ -10,7 +10,9 @@ import com.salesforce.phoenix.parse.FunctionParseNode;
 import com.salesforce.phoenix.schema.PDataType;
 import com.salesforce.phoenix.schema.tuple.Tuple;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable;
 import org.apache.hadoop.hbase.util.Bytes;
@@ -26,6 +28,7 @@ public class TimezoneOffsetFunction extends ScalarFunction {
 
 	public static final String NAME = "TIMEZONE_OFFSET";
 	private static final int MILIS_TO_MINUTES = 60 * 1000;
+	private final Map<String, TimeZone> chachedTimeZones = new HashMap<String, TimeZone>();
 
 	public TimezoneOffsetFunction() {
 	}
@@ -40,7 +43,7 @@ public class TimezoneOffsetFunction extends ScalarFunction {
 	}
 
 	@Override
-	public boolean evaluate(Tuple tuple, ImmutableBytesWritable ptr)  {
+	public boolean evaluate(Tuple tuple, ImmutableBytesWritable ptr) {
 		if (!children.get(0).evaluate(tuple, ptr)) {
 			return false;
 		}
@@ -51,15 +54,19 @@ public class TimezoneOffsetFunction extends ScalarFunction {
 			return false;
 		}
 
-		TimeZone tz =  TimeZone.getTimeZone(timezone);
-		if (!tz.getID().equals(timezone)) {
-//			throw new Exception("Invalid timezone " + timezone);
-			return false;
+		if (!chachedTimeZones.containsKey(timezone)) {
+			TimeZone tz = TimeZone.getTimeZone(timezone);
+			if (!tz.getID().equals(timezone)) {
+				//throw new Exception("Invalid timezone " + timezone);
+				return false;
+			}
+			chachedTimeZones.put(timezone, tz);
 		}
-		int offset = TimeZone.getTimeZone(timezone).getOffset((Long)PDataType.LONG.toObject(ptr.get(), ptr.getOffset(), ptr.getLength()));
 
+		int offset = chachedTimeZones.get(timezone)
+				.getOffset((Long) PDataType.LONG.toObject(ptr.get(), ptr.getOffset(), ptr.getLength()));
 
-		ptr.set(PDataType.INTEGER.toBytes(offset/MILIS_TO_MINUTES));
+		ptr.set(PDataType.INTEGER.toBytes(offset / MILIS_TO_MINUTES));
 		return true;
 	}
 
