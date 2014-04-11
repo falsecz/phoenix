@@ -4,9 +4,17 @@
  */
 package com.salesforce.phoenix.end2end;
 
+import com.salesforce.hbase.index.IndexTestingUtils;
+import com.salesforce.hbase.index.Indexer;
 import static com.salesforce.phoenix.end2end.BaseConnectedQueryTest.getUrl;
 import static org.junit.Assert.*;
 import java.sql.*;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.junit.Test;
 
 /**
@@ -14,6 +22,8 @@ import org.junit.Test;
  * @author tzolkincz
  */
 public class FirstAndLastExpressionTest extends BaseHBaseManagedTimeTest {
+
+	protected static final HBaseTestingUtility UTIL = new HBaseTestingUtility();
 
 	private void prepareTable() throws Exception {
 		Connection conn = DriverManager.getConnection(getUrl());
@@ -28,6 +38,117 @@ public class FirstAndLastExpressionTest extends BaseHBaseManagedTimeTest {
 
 		conn.commit();
 	}
+
+	@Test
+	public void mrdka() throws Exception {
+
+
+		Configuration conf = UTIL.getConfiguration();
+		IndexTestingUtils.setupConfig(conf);
+		// disable version checking, so we can test against whatever version of HBase happens to be
+		// installed (right now, its generally going to be SNAPSHOT versions).
+		conf.setBoolean(Indexer.CHECK_VERSION_CONF_KEY, false);
+		UTIL.startMiniCluster();
+
+
+		Connection conn = DriverManager.getConnection(getUrl());
+
+
+		String ddl = "CREATE TABLE IF NOT EXISTS \"testFirstTable\" (id INTEGER NOT NULL PRIMARY KEY, val INTEGER)";
+		conn.createStatement().execute(ddl);
+		ddl = "CREATE INDEX testFirstTableIndex on \"testFirstTable\" (val)";
+		conn.createStatement().execute(ddl);
+
+		conn.commit();
+		conn.close();
+
+		Thread.sleep(1000L);
+
+
+
+
+		conf.setInt("hbase.client.operation.timeout", 10);
+		conf.setInt("hbase.rpc.timeout", 10);
+		conf.setInt("hbase.client.retries.number", 1);
+
+		HBaseAdmin admin = UTIL.getHBaseAdmin();
+		int a = 4;
+		for (String t: admin.getTableNames()) {
+			System.out.println(t);
+			a ++;
+		}
+		if (true)
+			return;
+
+
+		HTable tableH = new HTable(conf, "\"testFirstTable\"");
+		tableH.setAutoFlush(false);
+
+		byte[] val = {(byte) 128, 0, 0, 12};
+		Put put = new Put(val);
+		put.add(Bytes.toBytes("_0"), Bytes.toBytes("VAL"), val);
+
+		tableH.put(put);
+		tableH.flushCommits();
+
+		ResultSet rs = conn.createStatement().executeQuery("SELECT * FROM testFirstTableIndex");
+
+		rs.next();
+		System.out.println(rs.getInt(1));
+		System.out.println(rs.getInt(2));
+
+//		conn.createStatement().execute("UPSERT INTO testFirstTable (id, val) VALUES (1, 2)");
+//		conn.commit();
+	}
+
+//	@Test
+//  public void testMultipleTimestampsInSinglePut() throws Exception {
+//    HTable primary = createSetupTables(fam1);
+//
+//    // do a put to the primary table
+//    Put p = new Put(row1);
+//    long ts1 = 10;
+//    long ts2 = 11;
+//    p.add(FAM, indexed_qualifer, ts1, value1);
+//    p.add(FAM, regular_qualifer, ts1, value2);
+//    // our group indexes all columns in the this family, so any qualifier here is ok
+//    p.add(FAM2, regular_qualifer, ts2, value3);
+//    primary.put(p);
+//    primary.flushCommits();
+//
+//    // read the index for the expected values
+//    HTable index1 = new HTable(UTIL.getConfiguration(), getIndexTableName());
+//
+//    // build the expected kvs
+//    List<Pair<byte[], CoveredColumn>> pairs = new ArrayList<Pair<byte[], CoveredColumn>>();
+//    pairs.add(new Pair<byte[], CoveredColumn>(value1, col1));
+//    pairs.add(new Pair<byte[], CoveredColumn>(EMPTY_BYTES, col2));
+//
+//    // check the first entry at ts1
+//    List<KeyValue> expected = CoveredColumnIndexCodec.getIndexKeyValueForTesting(row1, ts1, pairs);
+//    IndexTestingUtils.verifyIndexTableAtTimestamp(index1, expected, ts1, value1);
+//
+//    // check the second entry at ts2
+//    pairs.clear();
+//    pairs.add(new Pair<byte[], CoveredColumn>(value1, col1));
+//    pairs.add(new Pair<byte[], CoveredColumn>(value3, col2));
+//    expected = CoveredColumnIndexCodec.getIndexKeyValueForTesting(row1, ts2, pairs);
+//    IndexTestingUtils.verifyIndexTableAtTimestamp(index1, expected, ts2, value1);
+//
+//    // cleanup
+//    closeAndCleanupTables(primary, index1);
+//  }
+
+	@Test
+	public void zKrtka() throws Exception {
+		HBaseTestingUtility UTIL = new HBaseTestingUtility();
+
+
+		Connection conn =  DriverManager.getConnection(getUrl());
+
+
+	}
+
 
 	@Test
 	public void testFirst() throws Exception {

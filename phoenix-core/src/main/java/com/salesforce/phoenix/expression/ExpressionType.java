@@ -30,7 +30,6 @@ package com.salesforce.phoenix.expression;
 import java.util.Map;
 
 import com.google.common.collect.Maps;
-import static com.salesforce.phoenix.expression.ExpressionType.TimezoneOffsetFunction;
 import com.salesforce.phoenix.expression.function.ArrayIndexFunction;
 import com.salesforce.phoenix.expression.function.ArrayLengthFunction;
 import com.salesforce.phoenix.expression.function.CeilDateExpression;
@@ -78,6 +77,7 @@ import com.salesforce.phoenix.expression.function.UpperFunction;
 import com.salesforce.phoenix.expression.function.FirstFunction;
 import com.salesforce.phoenix.expression.function.HexToBytesFunction;
 import com.salesforce.phoenix.expression.function.TimezoneOffsetFunction;
+import com.salesforce.phoenix.expression.function.ConvertTimezoneFunction;
 
 
 /**
@@ -168,7 +168,8 @@ public enum ExpressionType {
     HexToBytesFunction(HexToBytesFunction.class),
     FirstFunction(FirstFunction.class),
     LastFunction(LastFunction.class),
-    TimezoneOffsetFunction(TimezoneOffsetFunction.class);
+    TimezoneOffsetFunction(TimezoneOffsetFunction.class),
+	ConvertTimezoneFunction(ConvertTimezoneFunction.class);
 
     ExpressionType(Class<? extends Expression> clazz) {
         this.clazz = clazz;

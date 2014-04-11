@@ -1,28 +1,28 @@
 /*******************************************************************************
  * Copyright (c) 2013, Salesforce.com, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     Redistributions of source code must retain the above copyright notice,
  *     this list of conditions and the following disclaimer.
  *     Redistributions in binary form must reproduce the above copyright notice,
  *     this list of conditions and the following disclaimer in the documentation
  *     and/or other materials provided with the distribution.
- *     Neither the name of Salesforce.com nor the names of its contributors may 
- *     be used to endorse or promote products derived from this software without 
+ *     Neither the name of Salesforce.com nor the names of its contributors may
+ *     be used to endorse or promote products derived from this software without
  *     specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE 
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL 
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ******************************************************************************/
 package com.salesforce.hbase.index.covered.example;
@@ -85,10 +85,10 @@ public class TestEndToEndCoveredIndexing {
   // matches the family2:* columns
   private static final CoveredColumn col2 = new CoveredColumn(FAM2_STRING, null);
   private static final CoveredColumn col3 = new CoveredColumn(FAM2_STRING, indexed_qualifer);
-  
+
   @Rule
   public TableName TestTable = new TableName();
-  
+
   private ColumnGroup fam1;
   private ColumnGroup fam2;
 
@@ -147,6 +147,8 @@ public class TestEndToEndCoveredIndexing {
     // read the index for the expected values
     HTable index1 = new HTable(UTIL.getConfiguration(), getIndexTableName());
 
+	Configuration c = UTIL.getConfiguration();
+
     // build the expected kvs
     List<Pair<byte[], CoveredColumn>> pairs = new ArrayList<Pair<byte[], CoveredColumn>>();
     pairs.add(new Pair<byte[], CoveredColumn>(value1, col1));
@@ -202,8 +204,57 @@ public class TestEndToEndCoveredIndexing {
     closeAndCleanupTables(primary, index1);
   }
 
+  @Test
+  public void mrdka() throws Exception {
+	  	HTable primary = createSetupTables(fam1);
+
+		Put put = new Put(row1);
+		long ts1 = 11;
+
+		put.add(FAM, indexed_qualifer, ts1, value1);
+
+		primary.put(put);
+		primary.flushCommits();
+
+
+  }
+
+  @Test
+  public void zKrtka() throws Exception {
+
+	  /**
+	   * ****** CREATE SETUP TABLES *******
+	   */
+	  HBaseAdmin admin = UTIL.getHBaseAdmin();
+	  // setup the index
+	  CoveredColumnIndexSpecifierBuilder builder = new CoveredColumnIndexSpecifierBuilder();
+
+	  ColumnGroup group = new ColumnGroup(FAM_STRING);
+
+	  builder.addIndexGroup(group);
+	  // create the index tables
+	  CoveredColumnIndexer.createIndexTable(admin, group.getTable());
+
+	  // setup the primary table
+	  String indexedTableName = Bytes.toString(TestTable.getTableName());
+	  HTableDescriptor pTable = new HTableDescriptor(indexedTableName);
+	  pTable.addFamily(new HColumnDescriptor(FAM));
+	  pTable.addFamily(new HColumnDescriptor(FAM2));
+	  builder.build(pTable);
+
+	  // create the primary table
+	  admin.createTable(pTable);
+	  HTable primary = new HTable(UTIL.getConfiguration(), indexedTableName);
+	  primary.setAutoFlush(false);
+	  /**
+	   * ****** CREATE SETUP TABLES END *******
+	   */
+
+
+	}
+
   /**
-   * Test that we make updates to multiple {@link ColumnGroup}s across a single put/delete 
+   * Test that we make updates to multiple {@link ColumnGroup}s across a single put/delete
    * @throws Exception on failure
    */
   @Test
@@ -291,7 +342,7 @@ public class TestEndToEndCoveredIndexing {
     // cleanup
     closeAndCleanupTables(primary, index1);
   }
-  
+
   @Test
   public void testSimpleDeletes() throws Exception {
     HTable primary = createSetupTables(fam1);
@@ -487,7 +538,7 @@ public class TestEndToEndCoveredIndexing {
     // cleanup
     closeAndCleanupTables(primary, index1);
   }
-  
+
   /**
    * If the client is using custom timestamps is possible that the updates come out-of-order (i.e.
    * update to ts 10 comes after the update to ts 12). In the case, we need to be sure that the
