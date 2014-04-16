@@ -52,4 +52,20 @@ public class ConvertTimezoneFunctionTest extends BaseHBaseManagedTimeTest {
 		assertTrue(rs.next());
 		assertEquals(1393596000000L, rs.getDate(3).getTime());
 	}
+	
+	@Test
+	public void testConvertTimezoneAmericaReverseDate() throws Exception {
+		Connection conn = DriverManager.getConnection(getUrl());
+		String ddl = "CREATE TABLE IF NOT EXISTS TIMEZONE_OFFSET_TEST (k1 INTEGER NOT NULL, dates DATE NOT NULL CONSTRAINT pk PRIMARY KEY (k1, dates DESC))";
+		conn.createStatement().execute(ddl);
+		String dml = "UPSERT INTO TIMEZONE_OFFSET_TEST (k1, dates) VALUES (1, TO_DATE('2014-03-01 00:00:00'))";
+		conn.createStatement().execute(dml);
+		conn.commit();
+
+		ResultSet rs = conn.createStatement().executeQuery(
+				"SELECT k1, dates, CONVERT_TZ(dates, 'UTC', 'America/Adak') FROM TIMEZONE_OFFSET_TEST");
+
+		assertTrue(rs.next());
+		assertEquals(1393596000000L, rs.getDate(3).getTime());
+	}
 }

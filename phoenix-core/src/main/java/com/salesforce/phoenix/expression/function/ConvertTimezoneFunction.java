@@ -7,6 +7,7 @@ package com.salesforce.phoenix.expression.function;
 
 import com.salesforce.phoenix.expression.Expression;
 import com.salesforce.phoenix.parse.FunctionParseNode;
+import com.salesforce.phoenix.schema.ColumnModifier;
 import com.salesforce.phoenix.schema.IllegalDataException;
 import com.salesforce.phoenix.schema.PDataType;
 import com.salesforce.phoenix.schema.tuple.Tuple;
@@ -46,8 +47,11 @@ public class ConvertTimezoneFunction extends ScalarFunction {
 		if (!children.get(0).evaluate(tuple, ptr)) {
 			return false;
 		}
-		Long date = (Long) PDataType.LONG.toObject(ptr.get(), ptr.getOffset(), ptr.getLength());
-
+		ColumnModifier columnModifier = children.get(0).getColumnModifier();
+		PDataType dataType = children.get(0).getDataType();
+		Date dateo = (Date) PDataType.DATE.toObject(ptr, dataType, columnModifier);
+		Long date = dateo.getTime();
+		
 		if (!children.get(1).evaluate(tuple, ptr)) {
 			return false;
 		}
