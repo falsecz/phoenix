@@ -7,6 +7,7 @@ package com.salesforce.phoenix.expression.function;
 
 import com.salesforce.phoenix.expression.Expression;
 import com.salesforce.phoenix.parse.FunctionParseNode;
+import com.salesforce.phoenix.schema.IllegalDataException;
 import com.salesforce.phoenix.schema.PDataType;
 import com.salesforce.phoenix.schema.tuple.Tuple;
 import java.sql.SQLException;
@@ -57,8 +58,7 @@ public class TimezoneOffsetFunction extends ScalarFunction {
 		if (!chachedTimeZones.containsKey(timezone)) {
 			TimeZone tz = TimeZone.getTimeZone(timezone);
 			if (!tz.getID().equals(timezone)) {
-				//throw new Exception("Invalid timezone " + timezone);
-				return false;
+				throw new IllegalDataException("Invalid timezone " + timezone);
 			}
 			chachedTimeZones.put(timezone, tz);
 		}
