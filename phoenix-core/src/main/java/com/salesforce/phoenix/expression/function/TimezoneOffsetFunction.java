@@ -7,6 +7,7 @@ package com.salesforce.phoenix.expression.function;
 
 import com.salesforce.phoenix.expression.Expression;
 import com.salesforce.phoenix.parse.FunctionParseNode;
+import com.salesforce.phoenix.schema.ColumnModifier;
 import com.salesforce.phoenix.schema.IllegalDataException;
 import com.salesforce.phoenix.schema.PDataType;
 import com.salesforce.phoenix.schema.tuple.Tuple;
@@ -63,8 +64,10 @@ public class TimezoneOffsetFunction extends ScalarFunction {
 			chachedTimeZones.put(timezone, tz);
 		}
 
+		ColumnModifier columnModifier = children.get(1).getColumnModifier();
+
 		int offset = chachedTimeZones.get(timezone)
-				.getOffset((Long) PDataType.LONG.toObject(ptr.get(), ptr.getOffset(), ptr.getLength()));
+				.getOffset((Long) PDataType.LONG.toObject(ptr, columnModifier));
 
 		ptr.set(PDataType.INTEGER.toBytes(offset / MILIS_TO_MINUTES));
 		return true;
